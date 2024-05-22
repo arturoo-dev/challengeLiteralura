@@ -12,4 +12,5 @@ public record Book(
         List<String> languages,
         @JsonAlias("download_count") Integer downloadCount
 ) {
+
 }

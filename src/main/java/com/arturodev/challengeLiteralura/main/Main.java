@@ -8,10 +8,8 @@ import com.arturodev.challengeLiteralura.service.ConvertData;
 import com.arturodev.challengeLiteralura.service.RequestAPI;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
+import javax.xml.crypto.Data;
+import java.util.*;
 
 public class Main {
 
@@ -19,8 +17,8 @@ public class Main {
     private static final RequestAPI requestAPI = new RequestAPI();
     private static final ConvertData convertData = new ConvertData();
     private final Scanner input = new Scanner(System.in);
-    private List<DataBooks> dataBooks = new ArrayList<>();
-    private List<DataAuthor> dataAuthors = new ArrayList<>();
+    private List<DataBooks> dataBooks;
+    private List<DataAuthor> dataAuthors;
     private final BookRepository bookRepository;
     private final AuthorsRepository authorsRepository;
 
@@ -46,32 +44,39 @@ public class Main {
                 """);
 
         while (option != 0) {
-            System.out.println(menu);
-            option = input.nextInt();
-            input.nextLine();
-            switch (option) {
-                case 1:
-                    searchBook();
-                    break;
-                case 2:
-                    System.out.println("opicion 2");
-                    break;
-                case 3:
-                    System.out.println("opicion 3");
-                    break;
-                case 4:
-                    System.out.println("opicion 4");
-                    break;
-                case 5:
-                    System.out.println("opicion 5");
-                    break;
-                case 0:
-                    System.out.println("Saliendo del sistema.....");
-                    break;
-                default:
-                    System.out.println("Ingrese una opcion valida.");
+            System.out.print(menu);
+            try {
+                option = input.nextInt();
+                input.nextLine(); // Limpiamos el buffer
+                switch (option) {
+                    case 1:
+                        searchBook();
+                        break;
+                    case 2:
+                        System.out.println("Opción 2");
+                        break;
+                    case 3:
+                        System.out.println("Opción 3");
+                        break;
+                    case 4:
+                        System.out.println("Opción 4");
+                        break;
+                    case 5:
+                        System.out.println("Opción 5");
+                        break;
+                    case 0:
+                        System.out.println("Saliendo del sistema.....");
+                        break;
+                    default:
+                        System.out.println("Ingrese una opción válida.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error: debes ingresar un numero!");
+                input.nextLine(); // Limpiamos el buffer en caso de error
             }
         }
+
+        input.close(); // Cerramos el scanner al salir del bucle
     }
 
     private void searchBook() {
@@ -79,38 +84,37 @@ public class Main {
         var bookName = input.nextLine();
         var jsonRequest = requestAPI.requestData(URL_BASE + "?search=" + bookName.replace(" ", "+"));
         var searchResult = convertData.convertData(jsonRequest, JsonResult.class);
-        Optional<Book> foundBook = searchResult.result().stream()
-                .filter(l -> l.title().toUpperCase().contains(bookName.toUpperCase()))
-                .findFirst();
-        if (foundBook.isEmpty()) {
-            System.out.println("Libro no encontrado");
-        } else {
-            Optional<Author> foundAuthor = foundBook.get().authors().stream()
-                    .map(a -> new Author(a.name(), a.birthYear(), a.deathYear())).findFirst();
-            if (foundAuthor.isPresent()) {
-                DataAuthor dataAuthor;
-                dataAuthor = new DataAuthor(
-                        foundAuthor.get().name(),
-                        foundAuthor.get().birthYear(),
-                        foundAuthor.get().deathYear());
-                authorsRepository.save(dataAuthor);
-                System.out.println("Autor registrado en la base de datos correctamente.");
 
-                DataBooks dataBooksObject = new DataBooks(
-                        foundBook.get().title(),
-                        dataAuthor,
-                        foundBook.get().languages(),
-                        foundBook.get().downloadCount()
-                );
-                System.out.println(dataBooksObject);
-                dataBooks.add(dataBooksObject);
-                dataAuthor.setBooks(dataBooks);
-                bookRepository.save(dataBooksObject);
-                System.out.println("Libro guardado en la base de datos correctamente.");
+        Optional<DataBooks> foundBook = searchResult.result().stream()
+                .map(DataBooks::new)
+                .findFirst();
+
+        if (foundBook.isPresent()) {
+            DataAuthor author = authorsRepository.findByNameContainsIgnoreCase(foundBook.get().getAuthor().getName());
+            if (author == null) {
+                DataAuthor newAuthor = foundBook.get().getAuthor();
+                author = authorsRepository.save(newAuthor);
             }
+            DataBooks book = foundBook.get();
+            //Buscamos el libro en la base de datos y comparamos en el filter si coincide con el que viene de la api.
+            DataBooks bookDatabase = bookRepository.findAll().stream()
+                    .filter(b -> b.getTitle().equals(book.getTitle()))
+                    .findFirst()
+                    .orElse(null);
+            if (bookDatabase == null) {
+                book.setAuthor(author);
+                bookRepository.save(book);
+                System.out.println("Libro registrado exitosamente.");
+            } else {
+                System.out.println("Este libro ya se encuentra registrado en la base de datos");
+            }
+        } else {
+            System.out.println("Este libro no encontrado en la api, intente nuevamente.");
         }
     }
 }
+
+
 
 
 
