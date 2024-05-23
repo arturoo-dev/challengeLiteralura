@@ -8,7 +8,6 @@ import com.arturodev.challengeLiteralura.service.ConvertData;
 import com.arturodev.challengeLiteralura.service.RequestAPI;
 
 
-import javax.xml.crypto.Data;
 import java.util.*;
 
 public class Main {
@@ -53,22 +52,22 @@ public class Main {
                         searchBook();
                         break;
                     case 2:
-                        System.out.println("Opción 2");
+                        showBooks();
                         break;
                     case 3:
-                        System.out.println("Opción 3");
+                        showAuthors();
                         break;
                     case 4:
-                        System.out.println("Opción 4");
+                        showAuthorsByYear();
                         break;
                     case 5:
-                        System.out.println("Opción 5");
+                        showBookByLanguage();
                         break;
                     case 0:
                         System.out.println("Saliendo del sistema.....");
                         break;
                     default:
-                        System.out.println("Ingrese una opción válida.");
+                        System.out.println(" ❌ Ingrese una opción válida. ❌");
                 }
             } catch (Exception e) {
                 System.out.println("Error: debes ingresar un numero!");
@@ -85,12 +84,15 @@ public class Main {
         var jsonRequest = requestAPI.requestData(URL_BASE + "?search=" + bookName.replace(" ", "+"));
         var searchResult = convertData.convertData(jsonRequest, JsonResult.class);
 
+        //Libro obtenido de la base de datos
         Optional<DataBooks> foundBook = searchResult.result().stream()
                 .map(DataBooks::new)
                 .findFirst();
 
         if (foundBook.isPresent()) {
+            //Buscamos el autor en la base de datos
             DataAuthor author = authorsRepository.findByNameContainsIgnoreCase(foundBook.get().getAuthor().getName());
+
             if (author == null) {
                 DataAuthor newAuthor = foundBook.get().getAuthor();
                 author = authorsRepository.save(newAuthor);
@@ -101,18 +103,70 @@ public class Main {
                     .filter(b -> b.getTitle().equals(book.getTitle()))
                     .findFirst()
                     .orElse(null);
+
             if (bookDatabase == null) {
                 book.setAuthor(author);
                 bookRepository.save(book);
-                System.out.println("Libro registrado exitosamente.");
+                System.out.println("\nLibro registrado exitosamente. ✅✅ ");
             } else {
-                System.out.println("Este libro ya se encuentra registrado en la base de datos");
+                System.out.println("Este libro ya se encuentra registrado en la base de datos ⚠️⚠️");
             }
         } else {
-            System.out.println("Este libro no encontrado en la api, intente nuevamente.");
+            System.out.println("Este libro no encontrado en la api, intente nuevamente. ⚠️⚠️");
         }
     }
+
+    private void showBooks() {
+        List<DataBooks> booksDataBase = bookRepository.findAll();
+        booksDataBase.forEach(System.out::println);
+    }
+
+    private void showAuthors() {
+        List<DataAuthor> authorsDataBase = authorsRepository.findAll();
+        authorsDataBase.forEach(System.out::println);
+    }
+
+    private void showAuthorsByYear() {
+        System.out.print("Ingrese el anio que desea buscar un autor vivo: ");
+        try {
+            int year = input.nextInt();
+            List<DataAuthor> authorsDataBase = authorsRepository.findByDeathYear(year);
+            authorsDataBase.forEach(System.out::println);
+        } catch (Exception e) {
+            System.out.println("Error: debes ingresar un numero!");
+            input.nextLine(); // Limpiamos el buffer en caso de error
+        }
+    }
+
+    private void showBookByLanguage() {
+        System.out.print("""
+                        |----------------------|
+                        |  Idiomas disponibles:|
+                        |                      |
+                        |    es -> Espaniol    |
+                        |    en -> Ingles      |
+                        |    fr -> Frances     |
+                        |    pt -> Portugues   |
+                        |                      |
+                        |----------------------|
+                """);
+
+        String language = input.nextLine();
+        List<DataBooks> booksDataBase = bookRepository.findAll();
+        if (!language.equals("es") && !language.equals("en") && !language.equals("fr") && !language.equals("pt")) {
+            System.out.println("Idioma no valido. ❌ --- > Ejemplo: 'es', 'en', 'fr', 'pt'");
+            return;
+        } else {
+            booksDataBase = booksDataBase.stream()
+                    .filter(b -> b.getLanguages().contains(language))
+                    .toList();
+            booksDataBase.forEach(System.out::println);
+        }
+        input.nextLine(); // Limpiamos el buffer en caso de error
+    }
+
 }
+
 
 
 

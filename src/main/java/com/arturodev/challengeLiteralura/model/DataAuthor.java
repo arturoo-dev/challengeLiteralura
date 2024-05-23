@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 
 @Entity
@@ -65,6 +67,19 @@ public class DataAuthor {
 
     public void setBooks(List<DataBooks> books) {
         this.books = books;
+    }
+
+    @Override
+    public String toString() {
+        return """
+                ------------- Autor -------------
+                Nombre 🤵: %s
+                Fecha de Nacimiento 🎂: %s
+                Anio de Defuncion 🕊️: %s
+                Libros 📚: %s
+                ---------------------------------
+                """.formatted(this.name, this.birth_year, this.death_year,this.books.stream().map(DataBooks::getTitle).collect(Collectors.toList()));
+
     }
 }
 

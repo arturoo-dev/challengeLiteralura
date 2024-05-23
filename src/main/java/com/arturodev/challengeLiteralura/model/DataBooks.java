@@ -73,12 +73,12 @@ public class DataBooks {
     @Override
     public String toString() {
         return """
-                ---------LIBRO---------
-                Titulo: %s
-                Autor: %s
-                Idioma: %s
-                Numero de Descargas: %s
-                -----------------------
+                -----------📖 LIBRO 📖-----------
+                Titulo 📚: %s
+                Autor 🤵🏼‍: %s
+                Idioma 🌎: %s
+                Numero de Descargas 📤: %s
+                ---------------------------------
                 """.formatted(this.title, this.author.getName(), this.languages, this.downloadCount);
     }
 }
