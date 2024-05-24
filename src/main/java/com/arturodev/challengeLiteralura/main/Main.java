@@ -16,8 +16,6 @@ public class Main {
     private static final RequestAPI requestAPI = new RequestAPI();
     private static final ConvertData convertData = new ConvertData();
     private final Scanner input = new Scanner(System.in);
-    private List<DataBooks> dataBooks;
-    private List<DataAuthor> dataAuthors;
     private final BookRepository bookRepository;
     private final AuthorsRepository authorsRepository;
 
@@ -91,12 +89,11 @@ public class Main {
 
         if (foundBook.isPresent()) {
             //Buscamos el autor en la base de datos
-            DataAuthor author = authorsRepository.findByNameContainsIgnoreCase(foundBook.get().getAuthor().getName());
-
-            if (author == null) {
-                DataAuthor newAuthor = foundBook.get().getAuthor();
-                author = authorsRepository.save(newAuthor);
-            }
+            DataAuthor author  = authorsRepository.findByNameContainsIgnoreCase(foundBook.get().getAuthor().getName())
+                    .orElseGet(() -> {
+                        DataAuthor newAuthor = foundBook.get().getAuthor();
+                        return authorsRepository.save(newAuthor);
+                    });
             DataBooks book = foundBook.get();
             //Buscamos el libro en la base de datos y comparamos en el filter si coincide con el que viene de la api.
             DataBooks bookDatabase = bookRepository.findAll().stream()
